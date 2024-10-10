@@ -1,0 +1,291 @@
+#!/usr/bin/env python3
+from warnings import simplefilter
+simplefilter("ignore", DeprecationWarning)
+from subprocess import run, DEVNULL, check_call
+from bs4 import BeautifulSoup as belaSopa
+from os import name as osName, devnull as osDevnull, system, makedirs
+from sys import exit as sysExit, executable as sysExecutable, stdout
+from pkg_resources import working_set
+from os.path import isfile as isFile, exists
+from pathlib import Path
+from time import sleep
+from ast import literal_eval
+import requests, math, re, webbrowser
+
+required = {'bs4', 'requests'}
+installed = {pkg.key for pkg in working_set}
+missing = required - installed
+if missing:
+    print("Dependências faltando. Instalando, por favor, aguarde.")
+    python = sysExecutable
+    check_call([python, '-m', 'pip', 'install', *missing], stdout=DEVNULL)
+
+# from PyQt5.QtWidgets import QWidget, QApplication, QVBoxLayout
+# from PyQt5.QtWebEngineWidgets import QWebEngineView
+# from PyQt5 import QtCore
+# app = QApplication(['', '--no-sandbox'])
+# main = QWebEngineView()
+
+### Formatação de caracteres
+class F:
+    # Formatação
+    END      = '\33[0m'
+    BOLD     = '\33[1m'
+    ITALIC   = '\33[3m'
+    URL      = '\33[4m'
+    BLINK    = '\33[5m'
+    BLINK2   = '\33[6m'
+    SELECTED = '\33[7m'
+class C:
+    # Cores
+    BLACK  = '\33[30m'
+    RED    = '\33[31m'
+    GREEN  = '\33[32m'
+    YELLOW = '\33[33m'
+    BLUE   = '\33[34m'
+    VIOLET = '\33[35m'
+    BEIGE  = '\33[36m'
+    WHITE  = '\33[37m'
+    GREY    = '\33[90m'
+    RED2    = '\33[91m'
+    GREEN2  = '\33[92m'
+    YELLOW2 = '\33[93m'
+    BLUE2   = '\33[94m'
+    VIOLET2 = '\33[95m'
+    BEIGE2  = '\33[96m'
+    WHITE2  = '\33[97m'
+class BG:
+    # Cores de fundo
+    BLACK  = '\33[40m'
+    RED    = '\33[41m'
+    GREEN  = '\33[42m'
+    YELLOW = '\33[43m'
+    BLUE   = '\33[44m'
+    VIOLET = '\33[45m'
+    BEIGE  = '\33[46m'
+    WHITE  = '\33[47m'
+    GREY    = '\33[100m'
+    RED2    = '\33[101m'
+    GREEN2  = '\33[102m'
+    YELLOW2 = '\33[103m'
+    BLUE2   = '\33[104m'
+    VIOLET2 = '\33[105m'
+    BEIGE2  = '\33[106m'
+    WHITE2  = '\33[107m'
+class E:
+    MAGNIFIER = "\U0001F50E"
+    HOURGLASS = "\U0000231B"
+class MSG:
+    LOADING = f"{F.BOLD}{C.BLUE}{E.HOURGLASS} Carregando...{F.END}"
+
+### Funções
+def clear():
+    system('cls' if osName == 'nt' else 'clear')
+def loadPage(url):
+    site = requests.get(url, headers=headers)
+    obj = belaSopa(site.content, "html.parser")
+    return obj
+def findAllPage(url, tag, key, value):
+    site = requests.get(url, headers=headers)
+    obj = belaSopa(site.content, "html.parser")
+    return obj.find_all(tag,{key:value})
+def findPage(url, tag, key, value):
+    site = requests.get(url, headers=headers)
+    obj = belaSopa(site.content, "html.parser")
+    return obj.find(tag,{key:value})
+def listar(lista, comparativo):
+    pos = 0
+    for key, value in lista.items():
+        pos += 1
+        if pos < 10:
+            zero = "0"
+        else:
+            zero = ""
+        if value in comparativo:
+            watched = C.GREEN
+        else:
+            watched = C.RED
+        print(f"{F.BOLD}{watched}[{zero}{pos}]{F.END}{C.WHITE} {key}{F.END}")
+
+clear()
+print(f"{F.BOLD}{C.GREEN}Branime {C.GREEN}[{C.YELLOW}<{C.BLUE}O{C.YELLOW}>{C.GREEN}]   {C.BLUE}2.0\n")
+
+homepath = Path.home()
+branimepath = f"{homepath}/.branime"
+varspath = f"{branimepath}/vars"
+watchedAnimesPath = f"{varspath}/watchedAnimes.txt"
+watchedEpisodesPath = f"{varspath}/watchedEpisodes.txt"
+
+
+while True:
+    try:
+        if not exists(varspath):
+            makedirs(varspath)
+        if not isFile(watchedAnimesPath):
+            with open(watchedAnimesPath, "w") as f:
+                f.write("[]")
+        if not isFile(watchedEpisodesPath):
+            with open(watchedEpisodesPath, "w") as f:
+                f.write("[]")
+
+        with open(watchedAnimesPath) as f:
+            watchedAnimes = literal_eval(f.read())
+
+        with open(watchedEpisodesPath) as f:
+            watchedEpisodes = literal_eval(f.read())
+
+        ### Código
+        numEpisodio = 0
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"}
+
+        pesquisa = input(f"{C.BEIGE}{F.BOLD}Digite o nome do anime:{F.END} ")
+
+        pesquisa = re.sub('[\W_]+', ' ', pesquisa).strip().replace(" ", "-").lower()
+
+        clear()
+        print(f"{C.BLUE}{F.BOLD}{E.MAGNIFIER} Pesquisando...{F.END}")
+        resultado = loadPage(f"https://animefire.plus/pesquisar/{pesquisa}")
+        resultado = str(resultado)
+        nomes = re.findall(r'<h3 class="animeTitle">(.*?)</h3>', resultado)
+        links = re.findall(r'<article class="card cardUltimosEps".*?<a href="([^"]+)">', resultado)
+        animes = dict(zip(nomes, links))
+
+        clear()
+
+        pos = 0
+        print(f"{C.BLUE}{F.BOLD}Animes disponíveis{F.END}")
+        print()
+        listar(animes, watchedAnimes)
+
+        print()
+
+        escolha = input(f"{C.BLUE}{F.BOLD}Digite o número do anime que você deseja ver:{F.END} ")
+        # if not escolha.isnumeric():
+        #     print(f"{C.RED}{C.BOLD}ERRO:{F.END} A entrada digitada deve ser um {F.BOLD}número{C.END}.")
+        #     exit()
+        url = list(animes.values())[int(escolha)-1]
+        nomeAnime = ''.join(list(animes.values())[int(escolha)-1])
+        print(url)
+        urlPermanente = url
+
+        while True:
+            clear()
+            print(MSG.LOADING)
+
+            resultado = loadPage(urlPermanente)
+            resultado = str(resultado)
+            resultado = re.findall(r'<div class="div_video_list">(.*?)<\/div>', resultado)
+            resultado = str(resultado)
+
+            nomes = re.findall(r'<a.*?>(.*?)</a>', resultado)
+            links = re.findall(r'<a\s[^>]*href="([^"]*)"', resultado)
+
+            episodios = dict(zip(nomes, links))
+
+            clear()
+
+            listar(episodios, watchedEpisodes)
+
+            escolha = input(f"{C.BEIGE}{F.BOLD}Digite o número do episódio que você deseja ver:{F.END} ")
+            escolha = int(escolha)
+            numEpisodio = escolha
+            url = list(episodios.values())[escolha-1]
+            nomeEpisodio = ''.join(list(episodios.values())[escolha-1])
+
+            clear()
+            print(MSG.LOADING)
+
+            animeUrl = url
+
+            resultado = loadPage(url)
+            resultado = str(resultado)
+            link = re.findall(r'<a[^>]*?class="page-link"[^>]*?href="([^"]+?)"[^>]*>', resultado)
+
+            for item in link:
+                if "/download/" in item:
+                    url = item
+
+            resultado = loadPage(url)
+            resultado = str(resultado)
+
+            links = re.findall(r'download="([^"]+)', resultado)
+
+            clear()
+
+            valid = False
+
+            pos = 0
+            for item in links:
+                pos += 1
+                if pos < 10:
+                    zero = "0"
+                else:
+                    zero = ""
+                if "/sd/" in item:
+                    print(f"{C.GREEN}{F.BOLD}[{zero}{pos}]{F.END}{C.YELLOW} SD (Baixa qualidade){F.END}")
+                    valid = True
+                if "/hd/" in item:
+                    print(f"{C.GREEN}{F.BOLD}[{zero}{pos}]{F.END}{C.BLUE} HD (Alta qualidade){F.END}")
+                    valid = True
+                if "/fhd/" in item:
+                    print(f"{C.GREEN}{F.BOLD}[{zero}{pos}]{F.END}{C.GREEN} Full HD (Qualidade superior){F.END}")
+                    valid = True
+
+            if valid == False:
+                print("Este episódio ou anime não está disponível no momento, ou é incompatível com o MPV. Por favor, tente novamente mais tarde. Você pode verificar se a versão dublada ou legendada está disponível. Quadrilhões de desculpas pela inconveniência. De qualquer forma, eu estarei abrindo uma janela do seu navegador com uma página para você tentar assistir o anime. Por favor, esteja utilizando bloqueadores de anúncio (i.e, uBlock Origin).")
+                webbrowser.open(animeUrl)
+                # main.load(QtCore.QUrl(animeUrl))
+                # main.show()
+                # app.exec_()
+                sysExit()
+
+            escolha = input(f"{C.BEIGE}{F.BOLD}Escolha a qualidade para assistir:{F.END} ")
+            escolha = int(escolha)
+
+            clear()
+
+            if not nomeAnime in watchedAnimes:
+                watchedAnimes.append(nomeAnime)
+                with open(watchedAnimesPath, "w") as f:
+                    f.write(str(watchedAnimes))
+                sleep(1)
+
+            if not nomeEpisodio in watchedEpisodes:
+                watchedEpisodes.append(nomeEpisodio)
+                with open(watchedEpisodesPath, "w") as f:
+                    f.write(str(watchedEpisodes))
+            
+            print(f"{F.BOLD}{C.BEIGE}Tudo pronto! Reproduzindo {C.GREEN}episódio {numEpisodio}{C.BEIGE}.{F.END}")
+
+            final = links[escolha-1]
+
+            try:
+                run(
+                    ['mpv', final],
+                    stdout = DEVNULL,
+                    stderr = DEVNULL)
+            except KeyboardInterrupt:    
+                None
+            clear()
+    except KeyboardInterrupt:
+        clear()
+        exit()
+    except ValueError as error:
+        try:
+            clear()
+            print(f"{C.RED}{F.BOLD}ERRO:{F.END} A entrada digitada deve ser {F.BOLD}um número{F.END}.\n")
+            print(f"{C.RED}Reiniciando Branime...")
+            sleep(2)
+            clear()
+        except KeyboardInterrupt:
+            clear()
+            exit()
+    except Exception:
+        try:
+            print(f"{C.RED}{F.BOLD}ERRO:{F.END} {error}\n")
+            print(f"{C.RED}Por favor, reporte isso ao desenvolvedor. Reiniciando Branime em 5 segundos...")
+            sleep(10)
+            clear()
+        except KeyboardInterrupt:
+            clear()
+            exit()
