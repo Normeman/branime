@@ -13,12 +13,14 @@ Hosteado no animefire.plus, se não funcionar é culpa do site, mas mesmo assim 
 ### Requisitos:
 > python3 & pip (`sudo apt install python3`)
 
+> mpv (`sudo apt install mpv`)
+
 > requests (`pip install requests`)
 
 > bs4 (`pip install bs4`)
 
 > urllib (`pip install urllib`)
 
-> Se não funcionar: BeautifulSoup4 (`pip install beautifulsoup4`).
+> setuptools (`pip install setuptools`).
 
 Se ainda assim não funcionar, [clique aqui](https://www.linux.org/pages/download/) para instalar a dependência final.
